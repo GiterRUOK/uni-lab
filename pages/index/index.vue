@@ -1,9 +1,11 @@
 <template>
 	<view class="content">
-		<image class="logo" src="/static/logo.png"></image>
-		<view class="text-area">
-			<text class="title">{{title}}</text>
+		<text class="sentence">{{sentence}}</text>
+		<view class="flex">
+			<input class="input" v-model="videoUrl"/>
+			<button @click="pastUrl">paste</button>
 		</view>
+		<button @click="parse">parse</button>
 	</view>
 </template>
 
@@ -11,42 +13,77 @@
 	export default {
 		data() {
 			return {
-				title: 'Hello'
+				sentence: '我很忙，时间比我更忙，不吃不睡，不舍昼夜',
+				videoUrl: ''
 			}
 		},
 		onLoad() {
-
+			this.getRandomSentence()
 		},
 		methods: {
-
+			getRandomSentence() {
+				uni.request({
+					url: 'https://api.oick.cn/yiyan/api.php',
+					success: ({data}) => {
+						console.log('sentence: ', data)
+						this.sentence = data
+					}
+				})
+			},
+			pastUrl() {
+				// 获取剪切板内容
+				uni.getClipboardData({
+					success: ({data}) => {
+						console.log('clipboard', data)
+						if (data.match('http://') || data.match('https://')) {
+							this.videoUrl = data
+							uni.hideToast()
+						} else {
+							uni.showToast({
+								title: '请先复制视频链接',
+								icon: 'none'
+							})
+						}
+					},
+					fail: () => {
+						uni.showToast({
+							title: '请先复制视频链接',
+							icon: 'none'
+						})
+					}
+				})
+			},
+			parse() {
+				console.log('the videoUrl: ', this.videoUrl)
+				uni.request({
+					url: 'https://api.oick.cn/video/api.php',
+					data: {
+						url: this.videoUrl
+					},
+					success: ({title, nickname, music, play}) => {
+						console.log('analyse success', title, nickname, music, play)
+					}
+				})
+			}
 		}
 	}
 </script>
 
-<style>
+<style lang="scss">
 	.content {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
+		padding: 0 24rpx;
 	}
-
-	.logo {
-		height: 200rpx;
-		width: 200rpx;
-		margin-top: 200rpx;
-		margin-left: auto;
-		margin-right: auto;
-		margin-bottom: 50rpx;
+	.sentence {
+		padding: 24rpx;
 	}
-
-	.text-area {
-		display: flex;
-		justify-content: center;
-	}
-
-	.title {
-		font-size: 36rpx;
-		color: #8f8f94;
+	.input {
+		border: solid 1px #7c7c7c;
+		border-radius: 10rpx;
+		height: 46px;
+		width: 500rpx;
 	}
 </style>
